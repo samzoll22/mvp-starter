@@ -8,8 +8,8 @@ CREATE TABLE words (
   id int NOT NULL AUTO_INCREMENT,
   word varchar(255) NOT NULL,
   category varchar(255) NOT NULL,
-  definition varchar(255) NOT NULL,
-  example varchar(255) NOT NULL,
+  definition text NOT NULL,
+  example text NOT NULL,
   PRIMARY KEY (ID)
 );
 

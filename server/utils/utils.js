@@ -1,8 +1,9 @@
 const request = require('request');
 const api = require('../config/config.js');
 const Promise = require('bluebird');
+const db = require('../../database-mysql/index');
 
-
+// API search.
 const getDefinition = (word, callback) => {
   console.log('Inside utility function', word, typeof word);
   const options = {
@@ -19,18 +20,8 @@ const getDefinition = (word, callback) => {
       console.error('Error: ', error);
       callback(error, null);
     } else {
-      // console.log('Definitions from api response', JSON.parse(response.body).results[0].lexicalEntries[0].entries, JSON.parse(response.body));
       let responseBody = JSON.parse(response.body);
-      // let word = responseBody.results[0].word;
-      // let definition = responseBody.results[0].lexicalEntries[0].entries[0].senses[0].definitions[0];
-      // let entries = {
-      //   word: word,
-      //   definitions: {definition: JSON.parse(response.body).results[0].lexicalEntries,
-      //     example
-      // };
       let lexicalCategories = organiseDefinitionEntries(responseBody);
-      // console.log('lexicalCategories', lexicalCategories);
-      // let entries = responseBody.results[0].lexicalEntries;
       tempWords.push(lexicalCategories);
       callback(null, tempWords);
     }
@@ -56,6 +47,7 @@ const getDefinition = (word, callback) => {
   // });
 };
 
+// Organise response data from Oxford Dictionary API into managable object for client and database.
 const organiseDefinitionEntries = function(searchResult) {
   // Map through the searchResult {} for lexical categories.
   let word = {
@@ -75,7 +67,7 @@ const organiseDefinitionEntries = function(searchResult) {
         definition: '',
         example: ''
       };
-      console.log('sense', sense);
+      // console.log('sense', sense);
       if (!sense.definitions) {
         return;
       } else {
@@ -92,7 +84,6 @@ const organiseDefinitionEntries = function(searchResult) {
         definitionAndExample.example = '';
       }
 
-
       category.entry.push(definitionAndExample);
     });
 
@@ -106,8 +97,46 @@ const organiseDefinitionEntries = function(searchResult) {
       break;
     }
   }
+  console.log('Organised definition response: ', word);
+  db.inputToDatabase(word);
   return word;
 };
+
+/* example of output from organiseDefinitionEntries
+
+const word = {id: 'bag',
+              lexicalCategories: [{type: 'noun',
+                                   entry: [{definition: 'a flexible container with an opening at the top, used for carrying things',
+                                            example: 'a bag of sugar'},
+                                           {definition: 'a woman, especially an older one, perceived as unpleasant or unattractive',
+                                            example: 'an interfering old bag'},
+                                           {definition: 'one\'s particular interest or taste',
+                                            example: 'ask the manager about mild curries, if that's your bag'},
+                                           {definition: 'a base',
+                                            example: ''},
+                                            definition: '(in southern Africa) a unit of measurement, used especially of grain, equal to 70 kg (formerly 200 lb)',
+                                            example: ''}
+                                          ]
+                                  },
+                                  {type: 'verb',
+                                   entry: [{definition: 'put (something) in a bag',
+                                            example: 'customers bagged their own groceries'},
+                                           {definition: 'succeed in killing or catching (an animal)',
+                                            example: 'get there early to bag a seat in the front row'},
+                                           {definition: '(of clothes, especially trousers) form loose bulges due to wear',
+                                            example: 'these trousers never bag at the knee'},
+                                           {definition: 'abandon or give up on',
+                                            example: 'she ought to just bag this marriage and get on with her life'},
+                                           {definition: 'criticize',
+                                            example: 'it\'s a pretty suspect outfit, deserving of the consistent bagging it gets from customers'},
+                                           {definition: 'fit (a patient) with an oxygen mask or other respiratory aid',
+                                            example: ''},
+                                          ]
+                                  }
+                                 ]
+              }
+
+*/
 
 
 // The tempWords [] is to mimic the db before we have built out the db.
